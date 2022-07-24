@@ -1,8 +1,8 @@
 import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
 
-@Entity()
-export default class Addresses {
+@Entity({name:"addresses"})
+export default class Address {
     @PrimaryGeneratedColumn()
     id: number;
 
@@ -13,7 +13,7 @@ export default class Addresses {
     hash: string;
 
     @Column({type:"varchar", length: 1000})
-    pubKey: string;
+    pubKey: string;  //hex form
 
     @Column({type:"varchar",length: 1000})
     witness: string; // payment output
@@ -21,6 +21,6 @@ export default class Addresses {
     @Column({type:"varchar",length:1000, nullable: true})
     userId: string;
 
-    @Column({type:"timestamp",nullable: true, default: Date.now()})
+    @Column({type:"timestamp",nullable: true, default: () => "CURRENT_TIMESTAMP"})
     createdAt: string;
 }

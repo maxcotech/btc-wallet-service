@@ -19,6 +19,7 @@ class Service {
     }
 
     getClient(){
+        config();
         const client = axios.create({baseURL:this.baseUrl});
         client.interceptors.request.use((configs) => {
             if(configs !== undefined && configs.headers !== undefined){
@@ -26,7 +27,18 @@ class Service {
                 configs.headers['x-api-key'] = process.env.GB_API_KEY ?? "";
                 configs.headers['Content-Type'] = "text/plain";
             }
+            return configs;
         })
+
+        client.interceptors.response.use(
+            function (response){
+                return response;
+            },
+            function (error){
+                console.log(error);
+                return Promise.reject(error);
+            }
+        )
         return client;
     }
 
@@ -43,13 +55,13 @@ class Service {
         }
     }
 
-    getRequest(method: string, params = [], id: string = "servicecall"){
-        return axios.post("",{
+    getRequest(method: string, params: Array<any> = [], id: string = "servicecall"){
+        return this.client.post("",JSON.stringify({
             id,
             jsonrpc: this.jsonrpcVersion,
             method,
             params
-        })
+        }))
        
     }
 

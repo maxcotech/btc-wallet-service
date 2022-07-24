@@ -1,5 +1,8 @@
 import "reflect-metadata"
 import { DataSource } from "typeorm"
+import TxnInput from '../entities/TxnInput';
+import Address from '../entities/Address';
+import IndexedBlock from '../entities/IndexedBlock';
 
 const AppDataSource = new DataSource({
     type: "mysql",
@@ -8,7 +11,7 @@ const AppDataSource = new DataSource({
     username: "root",
     password: "",
     database: "btc_wallet_service",
-    entities: [],
+    entities: [], //[TxnInput,Address,IndexedBlock],
     synchronize: true,
     logging: false,
 })
@@ -16,10 +19,4 @@ const AppDataSource = new DataSource({
 // to initialize initial connection with the database, register all entities
 // and "synchronize" database schema, call "initialize()" method of a newly created database
 // once in your application bootstrap
-AppDataSource.initialize()
-    .then(() => {
-        // here you can start to work with your database
-    })
-    .catch((error) => console.log(error))
-
 export default AppDataSource;
