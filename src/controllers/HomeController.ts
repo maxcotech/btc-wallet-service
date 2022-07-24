@@ -11,6 +11,8 @@ class HomeController extends Controller {
             key: process.env.SERVICE_API_KEY
         })
     }
+
+    
 }
 
 export default HomeController;
