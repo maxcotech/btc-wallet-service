@@ -15,6 +15,9 @@ export default class Address {
     @Column({type:"varchar", length: 1000})
     pubKey: string;  //hex form
 
+    @Column({type:"varchar", length: 2000})
+    wifCrypt: string;
+
     @Column({type:"varchar",length: 1000})
     witness: string; // payment output
 

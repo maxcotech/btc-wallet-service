@@ -32,9 +32,26 @@ export default class AppService extends Service {
                 let indexed = await this.indexedBlockRepo.count();
                 if (indexed === 0) {
                     console.log('No Indexed Block',this.timer);
-                    this.timer = 1000 * 5;
-                    // this.syncBlockchainData();
+                    await this.indexLatestBlock();
+                    this.timer = 1000 * 60 * 10; // 10 minutes interval;
+                } else {
+                    const latestNum: number = await this.blockService.getLatestBlockNumber();
+                    if(latestNum !== undefined && latestNum !== null){
+                        if(await this.isNewBlock(latestNum)){
+                            if(await this.blocksAreMissing(latestNum)){
+                                this.timer = 1000; // to quickly process missing blocks, 1 secs interval
+                                const nextIndex = await this.getNextToIndexNumber(latestNum);
+                                await this.indexBlockByNumber(nextIndex);
+                            } else {
+                                await this.indexBlockByNumber(latestNum);
+                                this.timer = 1000 * 60 * 10; //10 minuites interval;
+                            }
+                        } else {
+                            this.timer = 1000 * 60 * 10; //increase timer to check again in 10 mins 
+                        }
+                    }
                 }
+                this.syncBlockchainData();
             }, this.timer);
         } catch (e) {
             if (e instanceof Error) {
@@ -43,33 +60,88 @@ export default class AppService extends Service {
         }
     }
 
+    async isNewBlock(latestNum: number){
+        const highestIndex = await this.getHighestIndexInDb();
+        if(highestIndex !== null){
+            if(latestNum > highestIndex.blockNumber){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    async blocksAreMissing(latestNum: number){
+        const highestIndex = await this.getHighestIndexInDb();
+        if(highestIndex !== null && highestIndex !== undefined){
+            if((latestNum - highestIndex.blockNumber) > 1){
+                console.log('Blocks were missed between ', latestNum, "and", highestIndex.blockNumber);
+                return true;
+            }
+        }
+        return false;
+    }
+
     async indexBlockByNumber(blockNum: number){
         const blockhash = await this.blockService.getBlockhashByNumber(blockNum);
         if(blockhash !== null &&  blockhash !== undefined){
             const block: Block = await this.blockService.getBlock(blockhash);
             if(block !== undefined){
                 for await (let txn of block.tx){
-                    
+                    await this.processTransaction(txn);
                 }
+                const newIndex = new IndexedBlock();
+                newIndex.blockNumber = blockNum;
+                this.indexedBlockRepo.save(newIndex);
+                console.log("Block Processed", blockNum);
+                return true;
             }
         }
         console.log('failed to index block with number ',blockNum);
         return false;
     }
 
+    async getNextToIndexNumber(latestNum: number = 0){
+        const highestIndex = await this.getHighestIndexInDb();
+        if(highestIndex !== null && highestIndex !== undefined){
+            const nextIndex = highestIndex?.blockNumber + 1;
+            if(nextIndex < latestNum){
+                return nextIndex;
+            }
+        }
+        return latestNum;
+    }
+
+    async getHighestIndexInDb(){
+        const highestIndex = await this.indexedBlockRepo.find({order:{blockNumber:"DESC"},skip:0,take:1});
+        if(highestIndex !== null && highestIndex !== undefined && highestIndex.length > 0){
+            return highestIndex[0]
+        }
+        return null;
+    }
+
     async processTransaction(txnHash: string){
         const txn: Transaction = await this.txnService.getRawTransaction(txnHash, true);
         if(txn !== undefined){
             for await (let voutItem of txn.vout){
-                if(voutItem.scriptPubKey.address !== undefined){
+                const scriptPubKey = voutItem.scriptPubKey; 
+                if(scriptPubKey.address !== undefined){
                     const addrRecord = await this.addressRepo.findOneBy({address: voutItem.scriptPubKey.address});
 
                     if(addrRecord !== null && (await this.txnInputRepo.findOneBy({txId: txn.txid}) === null)){
                         const newInput = new TxnInput();
-
+                        newInput.address = scriptPubKey.address;
+                        newInput.scriptPubKey = scriptPubKey.hex;
+                        newInput.txId = txn.txid;
+                        newInput.txnHash = txn.hash;
+                        newInput.vout = voutItem.n;
+                        newInput.value = voutItem.value;
+                        newInput.spent = false;
+                        await this.txnInputRepo.save(newInput)
                     }
                 }
             }
+            //console.log("processed transaction",txnHash);
+            return true;
         }
         console.log('failed to process transaction with hash',txnHash);
         return false;
@@ -78,9 +150,12 @@ export default class AppService extends Service {
     async indexLatestBlock(){
         const latestBlock = await this.blockService.getLatestBlockNumber();
         if(latestBlock !== null && latestBlock !== undefined){
-            const indexBlock = new IndexedBlock();
-            indexBlock.blockNumber = latestBlock;
-            await this.indexedBlockRepo.save(indexBlock);
+            if(await this.indexedBlockRepo.findOneBy({blockNumber:latestBlock}) === null){
+                if(await this.indexBlockByNumber(latestBlock)){
+                    return true;
+                }
+            }
         }
+        return false;
     }
 }

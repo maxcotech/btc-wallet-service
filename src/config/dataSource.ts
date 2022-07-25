@@ -11,7 +11,7 @@ const AppDataSource = new DataSource({
     username: "root",
     password: "",
     database: "btc_wallet_service",
-    entities: [], //[TxnInput,Address,IndexedBlock],
+    entities: [TxnInput,Address,IndexedBlock],
     synchronize: true,
     logging: false,
 })

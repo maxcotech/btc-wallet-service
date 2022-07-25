@@ -1,6 +1,6 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
-@Entity({name:"TxnInputs"})
+@Entity({name:"txn_inputs"})
 export default class TxnInput {
    
     @PrimaryGeneratedColumn()

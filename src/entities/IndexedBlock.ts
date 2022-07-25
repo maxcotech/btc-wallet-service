@@ -2,7 +2,7 @@ import { Column, Entity, PrimaryGeneratedColumn } from "typeorm"
 
 @Entity()
 
-@Entity({name:"IndexedBlocks"})
+@Entity({name:"indexed_blocks"})
 export default class IndexedBlock {
     @PrimaryGeneratedColumn()
     id: number;

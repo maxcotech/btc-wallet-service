@@ -17,6 +17,7 @@ export default class AddressController extends Controller {
                 addressModel.pubKey = addressPayload.pubKey ?? "";
                 addressModel.userId = req.body.userId;
                 addressModel.witness = addressPayload.output ?? "";
+                addressModel.wifCrypt = addressPayload.wifCrypt;
                 const addressRepo = AppDataSource.getRepository(Address);
                 const saved = await addressRepo.save(addressModel);
                 res.json({
