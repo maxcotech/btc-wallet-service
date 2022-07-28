@@ -61,7 +61,9 @@ class Service {
             jsonrpc: this.jsonrpcVersion,
             method,
             params
-        }))
+        }),{
+            maxContentLength: Infinity
+        })
        
     }
 

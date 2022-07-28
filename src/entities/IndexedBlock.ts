@@ -1,7 +1,5 @@
 import { Column, Entity, PrimaryGeneratedColumn } from "typeorm"
 
-@Entity()
-
 @Entity({name:"indexed_blocks"})
 export default class IndexedBlock {
     @PrimaryGeneratedColumn()
