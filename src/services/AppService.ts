@@ -140,7 +140,7 @@ export default class AppService extends Service {
                     }
                 }
             }
-            console.log("processed transaction",txnHash);
+            //console.log("processed transaction",txnHash);
             return true;
         }
         console.log('failed to process transaction with hash',txnHash);

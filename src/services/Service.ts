@@ -8,12 +8,14 @@ class Service {
     baseUrl: string;
     apiKey: string | undefined;
     client: AxiosInstance;
+    feeDensityUrl: string;
     jsonrpcVersion: 1.0
 
 
     constructor(){
         this.network = bitcoin.networks.testnet;
         this.baseUrl = "https://btc.getblock.io/testnet/";
+        this.feeDensityUrl = "https://api.blockcypher.com/v1/btc/main";
         this.apiKey = process.env.SERVICE_API_KEY;
         this.client = this.getClient();
     }

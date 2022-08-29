@@ -23,6 +23,9 @@ app.get("/blocks/:blockNumber/hash",BlockController.getBlockHash);
 app.get("/block/:blockhash",BlockController.getBlock);
 app.get("/transactions/:tx_hash",TransactionController.getRawTransaction);
 app.get("/", HomeController.index);
+app.post("/transaction",jsonParser,TransactionController.createTransaction)
+
+
 
 app.listen(port,() => {
     console.log(`Bitcoin wallet service running on port ${port}`);

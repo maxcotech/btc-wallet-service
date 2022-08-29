@@ -1,3 +1,5 @@
+import TxnInput from "../entities/TxnInput"
+
 export interface Transaction {
     txid: string,
     hash: string,
@@ -34,4 +36,21 @@ export interface ScriptPubKey {
     hex: string,
     address?: string,
     type: string
+}
+
+export interface TxnOutput {
+    address: string,
+    value: number
+}
+
+export interface TxnParams {
+    inputs: TxnInput[],
+    outputs: TxnOutput[],
+    transactionFee?: number
+}
+
+export interface FeeRatePayload {
+    high_fee_per_kb: number,
+    medium_fee_per_kb: number,
+    low_fee_per_kb: number,
 }

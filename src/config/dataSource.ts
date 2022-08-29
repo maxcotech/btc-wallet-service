@@ -3,6 +3,7 @@ import { DataSource } from "typeorm"
 import TxnInput from '../entities/TxnInput';
 import Address from '../entities/Address';
 import IndexedBlock from '../entities/IndexedBlock';
+import AccountRecord from "../entities/AccountRecord";
 
 const AppDataSource = new DataSource({
     type: "mysql",
@@ -11,7 +12,7 @@ const AppDataSource = new DataSource({
     username: "root",
     password: "",
     database: "btc_wallet_service",
-    entities: [TxnInput,Address,IndexedBlock],
+    entities: [TxnInput,Address,IndexedBlock,AccountRecord],
     synchronize: true,
     logging: false,
 })
