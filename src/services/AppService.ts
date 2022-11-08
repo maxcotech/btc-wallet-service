@@ -8,6 +8,7 @@ import TransactionService from './TransactionService';
 import { Transaction } from './../dataTypes/Transaction';
 import Address from "../entities/Address";
 import TxnInput from "../entities/TxnInput";
+import MessageService from './MessageService';
 
 export default class AppService extends Service {
     indexedBlockRepo: Repository<IndexedBlock>;
@@ -89,9 +90,15 @@ export default class AppService extends Service {
                 for await (let txn of block.tx){
                     await this.processTransaction(txn);
                 }
-                const newIndex = new IndexedBlock();
-                newIndex.blockNumber = blockNum;
-                this.indexedBlockRepo.save(newIndex);
+                let highestIndex = await this.getHighestIndexInDb();
+                if(highestIndex !== null){
+                    highestIndex.blockNumber = blockNum;
+                    await this.indexedBlockRepo.save(highestIndex);
+                } else {
+                    let latestIndex = new IndexedBlock();
+                    latestIndex.blockNumber = blockNum;
+                    await this.indexedBlockRepo.save(latestIndex);
+                }
                 console.log("Block Processed", blockNum);
                 return true;
             }
@@ -120,6 +127,7 @@ export default class AppService extends Service {
     }
 
     async processTransaction(txnHash: string){
+        console.log("processing transaction ",txnHash);
         const txn: Transaction = await this.txnService.getRawTransaction(txnHash, true);
         if(txn !== undefined){
             for await (let voutItem of txn.vout){
@@ -136,7 +144,9 @@ export default class AppService extends Service {
                         newInput.vout = voutItem.n;
                         newInput.value = voutItem.value;
                         newInput.spent = false;
-                        await this.txnInputRepo.save(newInput)
+                        const savedInput = await this.txnInputRepo.save(newInput);
+                        const messageService = new MessageService();
+                        messageService.sendIncomingTransaction(savedInput);
                     }
                 }
             }

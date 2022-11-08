@@ -3,7 +3,7 @@ import * as bitcoin from "bitcoinjs-lib";
 import { config } from "dotenv";
 
 class Service {
-    
+
     network: bitcoin.networks.Network;
     baseUrl: string;
     apiKey: string | undefined;
@@ -12,7 +12,7 @@ class Service {
     jsonrpcVersion: 1.0
 
 
-    constructor(){
+    constructor() {
         this.network = bitcoin.networks.testnet;
         this.baseUrl = "https://btc.getblock.io/testnet/";
         this.feeDensityUrl = "https://api.blockcypher.com/v1/btc/main";
@@ -20,11 +20,32 @@ class Service {
         this.client = this.getClient();
     }
 
-    getClient(){
-        config();
-        const client = axios.create({baseURL:this.baseUrl});
+    getAppClient() {
+        const client = axios.create({baseURL: process.env.APP_API_URL});
         client.interceptors.request.use((configs) => {
             if(configs !== undefined && configs.headers !== undefined){
+                configs.headers.accept = "application/json";
+                configs.headers['X-gateway-key'] = process.env.APP_API_KEY ?? "";
+            }
+            return configs;
+        })
+        client.interceptors.response.use(
+            function (response) {
+                return response;
+            },
+            function (error) {
+                console.log(error);
+                return Promise.reject(error);
+            }
+        )
+        return client;
+    }
+
+    getClient() {
+        config();
+        const client = axios.create({ baseURL: this.baseUrl });
+        client.interceptors.request.use((configs) => {
+            if (configs !== undefined && configs.headers !== undefined) {
                 configs.headers.accept = "application/json";
                 configs.headers['x-api-key'] = process.env.GB_API_KEY ?? "";
                 configs.headers['Content-Type'] = "text/plain";
@@ -33,10 +54,10 @@ class Service {
         })
 
         client.interceptors.response.use(
-            function (response){
+            function (response) {
                 return response;
             },
-            function (error){
+            function (error) {
                 console.log(error);
                 return Promise.reject(error);
             }
@@ -44,11 +65,11 @@ class Service {
         return client;
     }
 
-    getConnection(){
+    getConnection() {
         return this;
     }
 
-    getSingleParamReqBody(param: string ,method: string, id: string = "servicecall"){
+    getSingleParamReqBody(param: string, method: string, id: string = "servicecall") {
         return {
             id,
             jsonrpc: this.jsonrpcVersion,
@@ -57,16 +78,17 @@ class Service {
         }
     }
 
-    getRequest(method: string, params: Array<any> = [], id: string = "servicecall"){
-        return this.client.post("",JSON.stringify({
+    async getRequest(method: string, params: Array<any> = [], id: string = "servicecall") {
+        return await this.client.post("", JSON.stringify({
             id,
             jsonrpc: this.jsonrpcVersion,
             method,
             params
-        }),{
-            maxContentLength: Infinity
+        }), {
+            maxContentLength: Infinity,
+            maxBodyLength: Infinity,
+            timeoutErrorMessage: "Could not complete this request on time ",
         })
-       
     }
 
 }

@@ -7,6 +7,9 @@ import InsufficientInputs from './../exceptions/InsufficientInputs';
 import TransactionService from '../services/TransactionService';
 import { btcToSatoshi, convertItemsToSatoshi } from './conversions';
 import { config } from 'dotenv';
+import AddressServices from '../services/AddressServices';
+import SpentInput from '../entities/SpentInput';
+import SentTransaction from '../entities/SentTransaction';
 
 
 export async function prepareTxnParams(initialOutputs: TxnOutput[]){
@@ -80,12 +83,42 @@ export async function calculateTransactionFees(inputCount: number, outputCount: 
 export function deductFeeFromOutputs(outputs: TxnOutput[], fee: number){
     const outputLen = outputs.length;
     const divPercentage = 100 / outputLen;
-    const amountToDeduct = (divPercentage / 100) * fee;
+    const amountToDeduct = Math.ceil((divPercentage / 100) * fee);
     const newOutputs = outputs.map((output) => {
         return { ...output,value: output.value - amountToDeduct }
     })
     return newOutputs;
 }
+
+export function validateInputSignatures( pubkey: Buffer, msghash: Buffer, signature: Buffer){
+    const ecpair = (new AddressServices()).getEcpair();
+    return ecpair.fromPublicKey(pubkey).verify(msghash, signature)
+}
+
+export async function recordSentTransaction(txId: string, inputsUsed: TxnInput[]){
+    return await AppDataSource.transaction(async (entityManager) => {
+        const spentInputRepo = entityManager.getRepository(SpentInput);
+        const sentTxnRepo = entityManager.getRepository(SentTransaction);
+        const txnInputRepo = entityManager.getRepository(TxnInput);
+        const updatedInputs: TxnInput[] = [];
+        const spentInputs: SpentInput[] = [];
+        const newSentTxn = new SentTransaction();
+        newSentTxn.txId = txId;
+        const savedSentTxn = await sentTxnRepo.save(newSentTxn);
+        inputsUsed.forEach((input) => {
+            input.spent = true;
+            updatedInputs.push(input);
+            const newSpentInput = new SpentInput();
+            newSpentInput.inputId = input.id;
+            newSpentInput.txId = savedSentTxn.id
+            spentInputs.push(newSpentInput);
+        })
+        await spentInputRepo.save(spentInputs);
+        await txnInputRepo.save(updatedInputs);
+        return;
+    })
+}
+
 
 
 

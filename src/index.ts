@@ -6,6 +6,7 @@ import BlockController from './controllers/BlockController';
 import AppDataSource from './config/dataSource';
 import TransactionController from './controllers/TransactionController';
 import bodyParser from "body-parser";
+import Controller from './controllers/Controller';
 
 const app = express();
 const port = 2000;
@@ -23,9 +24,9 @@ app.get("/blocks/:blockNumber/hash",BlockController.getBlockHash);
 app.get("/block/:blockhash",BlockController.getBlock);
 app.get("/transactions/:tx_hash",TransactionController.getRawTransaction);
 app.get("/", HomeController.index);
-app.post("/transaction",jsonParser,TransactionController.createTransaction)
-
-
+app.post("/transaction",jsonParser,TransactionController.createTransaction);
+app.post("/transaction/verify",jsonParser,TransactionController.verifyTransaction);
+app.get("/ping",Controller.ping);
 
 app.listen(port,() => {
     console.log(`Bitcoin wallet service running on port ${port}`);

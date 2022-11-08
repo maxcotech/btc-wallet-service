@@ -1,5 +1,9 @@
+import * as sb from "satoshi-bitcoin-ts";
+
 export const btcToSatoshi = (btc: number) => {
-    return btc * 10000000;
+    
+        return sb.toSatoshi(btc);
+    
 }
 
 /*

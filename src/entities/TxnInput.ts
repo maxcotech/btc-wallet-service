@@ -22,6 +22,9 @@ export default class TxnInput {
     value: number; 
 
     @Column({type:"bool", default: false})
+    received: boolean;
+
+    @Column({type:"bool", default: false})
     spent: boolean;
 
     @Column({nullable: true, type:"varchar", length: 2000})

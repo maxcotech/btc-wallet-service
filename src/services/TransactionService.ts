@@ -14,5 +14,18 @@ export default class TransactionService extends Service{
         return result.data;
     }
 
+    async testMempoolAcceptance(transactions: string[]){
+        const result = await this.getRequest("testmempoolaccept",[transactions]);
+        return result.data?.result;
+    }
+
+    async publishTransaction(txnHex: string){
+        const result = await this.getRequest("sendrawtransaction",[txnHex])
+        return result.data?.result;
+        
+    }
+
+    
+
     
 }
