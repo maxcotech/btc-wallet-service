@@ -1,12 +1,13 @@
 import axios, { AxiosInstance } from "axios";
 import * as bitcoin from "bitcoinjs-lib";
-import { config } from "dotenv";
+import { AUTH_HEADER_KEY } from "../config/appConstants";
+import { APP_API_KEY, APP_API_URL, GB_API_KEY, NODE_BASE_URL } from "../config/settings";
+import { getClientSecret } from "../helpers/auth_helpers";
 
 class Service {
 
     network: bitcoin.networks.Network;
     baseUrl: string;
-    apiKey: string | undefined;
     client: AxiosInstance;
     feeDensityUrl: string;
     jsonrpcVersion: 1.0
@@ -14,18 +15,17 @@ class Service {
 
     constructor() {
         this.network = bitcoin.networks.testnet;
-        this.baseUrl = "https://btc.getblock.io/testnet/";
+        this.baseUrl = NODE_BASE_URL;
         this.feeDensityUrl = "https://api.blockcypher.com/v1/btc/main";
-        this.apiKey = process.env.SERVICE_API_KEY;
         this.client = this.getClient();
     }
 
     getAppClient() {
-        const client = axios.create({baseURL: process.env.APP_API_URL});
-        client.interceptors.request.use((configs) => {
+        const client = axios.create({baseURL: APP_API_URL});
+        client.interceptors.request.use(async (configs) => {
             if(configs !== undefined && configs.headers !== undefined){
                 configs.headers.accept = "application/json";
-                configs.headers['X-gateway-key'] = process.env.APP_API_KEY ?? "";
+                configs.headers[AUTH_HEADER_KEY] = await getClientSecret() ?? "";
             }
             return configs;
         })
@@ -42,12 +42,11 @@ class Service {
     }
 
     getClient() {
-        config();
         const client = axios.create({ baseURL: this.baseUrl });
         client.interceptors.request.use((configs) => {
             if (configs !== undefined && configs.headers !== undefined) {
                 configs.headers.accept = "application/json";
-                configs.headers['x-api-key'] = process.env.GB_API_KEY ?? "";
+                configs.headers['x-api-key'] = GB_API_KEY ?? "";
                 configs.headers['Content-Type'] = "text/plain";
             }
             return configs;

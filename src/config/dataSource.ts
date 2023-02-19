@@ -4,15 +4,18 @@ import TxnInput from '../entities/TxnInput';
 import Address from '../entities/Address';
 import IndexedBlock from '../entities/IndexedBlock';
 import AccountRecord from "../entities/AccountRecord";
+import MessageQueue from "../entities/MessageQueue";
+import FailedQueueMessage from "../entities/FailedQueueMessage";
+import { DB_HOST, DB_NAME, DB_PASSWORD, DB_PORT, DB_USER } from "./settings";
 
 const AppDataSource = new DataSource({
     type: "mysql",
-    host: "localhost",
-    port: 3306,
-    username: "root",
-    password: "",
-    database: "btc_wallet_service",
-    entities: [TxnInput,Address,IndexedBlock,AccountRecord],
+    host: DB_HOST,
+    port: DB_PORT,
+    username: DB_USER,
+    password: DB_PASSWORD,
+    database: DB_NAME,
+    entities: [TxnInput,Address,IndexedBlock,AccountRecord, MessageQueue, FailedQueueMessage],
     synchronize: true,
     logging: false,
 })

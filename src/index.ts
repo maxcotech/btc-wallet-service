@@ -7,30 +7,43 @@ import AppDataSource from './config/dataSource';
 import TransactionController from './controllers/TransactionController';
 import bodyParser from "body-parser";
 import Controller from './controllers/Controller';
+import MessageService from "./services/MessageService";
+import { requireAuthKey } from "./helpers/auth_helpers";
+import { PORT } from "./config/settings";
 
 const app = express();
-const port = 2000;
 const jsonParser = bodyParser.json();
-AppDataSource.initialize().then(() => {
-    console.log('Data Store initialized.');
-}).catch((err) => {
-    console.log('Data store initialization failed',err);
-});
-const appService = new AppService();
 
-app.post("/address",jsonParser,AddressController.createAddress)
-app.get("/blocks/latest",BlockController.getLatestBlock)
-app.get("/blocks/:blockNumber/hash",BlockController.getBlockHash);
-app.get("/block/:blockhash",BlockController.getBlock);
-app.get("/transactions/:tx_hash",TransactionController.getRawTransaction);
-app.get("/", HomeController.index);
-app.post("/transaction",jsonParser,TransactionController.createTransaction);
-app.post("/transaction/verify",jsonParser,TransactionController.verifyTransaction);
-app.get("/ping",Controller.ping);
+(async () => {
+    try{
+        await AppDataSource.initialize();
+        console.log('App Data Store initialized.');
+        app.post("/address",jsonParser, await requireAuthKey(AddressController.createAddress))
+        app.get("/blocks/latest",await requireAuthKey(BlockController.getLatestBlock))
+        app.get("/blocks/:blockNumber/hash",await requireAuthKey(BlockController.getBlockHash));
+        app.get("/block/:blockhash",await requireAuthKey(BlockController.getBlock));
+        app.get("/transactions/:tx_hash",await requireAuthKey(TransactionController.getRawTransaction));
+        app.get("/", HomeController.index);
+        app.post("/transaction",jsonParser,await requireAuthKey(TransactionController.createTransaction));
+        app.post("/transaction/verify",jsonParser,await requireAuthKey(TransactionController.verifyTransaction));
+        app.get("/ping",await requireAuthKey(Controller.ping));
 
-app.listen(port,() => {
-    console.log(`Bitcoin wallet service running on port ${port}`);
-})
+        app.listen(PORT,() => {
+            console.log(`Bitcoin wallet service running on PORT ${PORT}`);
+        })
+
+        const appService = new AppService();
+        const messageService = new MessageService();
+        //appService.syncBlockchainData();
+        messageService.processMessageQueue();
+    }
+    catch(e){
+        console.log("Failed to initialize App ", e)
+    }
+
+})()
 
 
-appService.syncBlockchainData();
+
+
+

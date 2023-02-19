@@ -6,14 +6,14 @@ import { sumItemValues } from './array_helpers';
 import InsufficientInputs from './../exceptions/InsufficientInputs';
 import TransactionService from '../services/TransactionService';
 import { btcToSatoshi, convertItemsToSatoshi } from './conversions';
-import { config } from 'dotenv';
 import AddressServices from '../services/AddressServices';
 import SpentInput from '../entities/SpentInput';
 import SentTransaction from '../entities/SentTransaction';
+import { VAULT_ADDRESS } from '../config/settings';
+import { walletErrors } from '../config/errors/wallet.errors';
 
 
 export async function prepareTxnParams(initialOutputs: TxnOutput[]){
-    config();
     const amountToSend = sumItemValues<TxnOutput>(initialOutputs,"value");
     console.log("amount to send.........",amountToSend)
     const txnParams: TxnParams = {inputs: [],outputs:[]}
@@ -21,7 +21,7 @@ export async function prepareTxnParams(initialOutputs: TxnOutput[]){
     console.log("Number of inputs to use....",inputsToUse.length);
     console.log("Amount available....",totalAmount);
     if((inputsToUse.length <= 0) || (totalAmount < amountToSend)){
-        throw new InsufficientInputs("Inputs not sufficient to create transaction")
+        throw new InsufficientInputs(walletErrors.insufficientBalance)
     } else {
         let txnFees = await calculateTransactionFees(inputsToUse.length, initialOutputs.length);
         let amountToSendInSats = btcToSatoshi(amountToSend);
@@ -33,7 +33,7 @@ export async function prepareTxnParams(initialOutputs: TxnOutput[]){
             txnFees = await calculateTransactionFees(inputsToUse.length, finalOutputs.length + 1);
             finalOutputs = deductFeeFromOutputs(finalOutputs,txnFees);
             finalOutputs.push({
-                address: process.env.VAULT_ADDRESS,
+                address: VAULT_ADDRESS,
                 value: remainder
             } as TxnOutput)
         } else {

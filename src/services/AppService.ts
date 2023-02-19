@@ -127,34 +127,39 @@ export default class AppService extends Service {
     }
 
     async processTransaction(txnHash: string){
-        console.log("processing transaction ",txnHash);
-        const txn: Transaction = await this.txnService.getRawTransaction(txnHash, true);
-        if(txn !== undefined){
-            for await (let voutItem of txn.vout){
-                const scriptPubKey = voutItem.scriptPubKey; 
-                if(scriptPubKey.address !== undefined){
-                    const addrRecord = await this.addressRepo.findOneBy({address: voutItem.scriptPubKey.address});
-
-                    if(addrRecord !== null && (await this.txnInputRepo.findOneBy({txId: txn.txid}) === null)){
-                        const newInput = new TxnInput();
-                        newInput.address = scriptPubKey.address;
-                        newInput.scriptPubKey = scriptPubKey.hex;
-                        newInput.txId = txn.txid;
-                        newInput.txnHash = txn.hash;
-                        newInput.vout = voutItem.n;
-                        newInput.value = voutItem.value;
-                        newInput.spent = false;
-                        const savedInput = await this.txnInputRepo.save(newInput);
-                        const messageService = new MessageService();
-                        messageService.sendIncomingTransaction(savedInput);
+        try{
+            console.log("processing transaction ",txnHash);
+            const txn: Transaction = await this.txnService.getRawTransaction(txnHash, true);
+            if(txn !== undefined){
+                for await (let voutItem of txn.vout){
+                    const scriptPubKey = voutItem.scriptPubKey; 
+                    if(scriptPubKey.address !== undefined){
+                        const addrRecord = await this.addressRepo.findOneBy({address: voutItem.scriptPubKey.address});
+                        if(addrRecord !== null && (await this.txnInputRepo.findOneBy({txId: txn.txid}) === null)){
+                            const newInput = new TxnInput();
+                            newInput.address = scriptPubKey.address;
+                            newInput.scriptPubKey = scriptPubKey.hex;
+                            newInput.txId = txn.txid;
+                            newInput.txnHash = txn.hash;
+                            newInput.vout = voutItem.n;
+                            newInput.value = voutItem.value;
+                            newInput.spent = false;
+                            const savedInput = await this.txnInputRepo.save(newInput);
+                            const messageService = new MessageService();
+                            await messageService.queueCreditTransaction(savedInput);
+                        }
                     }
                 }
+                //console.log("processed transaction",txnHash);
+                return true;
             }
-            //console.log("processed transaction",txnHash);
-            return true;
+            console.log('failed to process transaction with hash',txnHash);
+            return false;
         }
-        console.log('failed to process transaction with hash',txnHash);
-        return false;
+        catch(e){
+            console.log('Failed to process transaction ',txnHash);
+            return false;
+        }
     }
 
     async indexLatestBlock(){
