@@ -132,7 +132,7 @@ export default class AppService extends Service {
 
     async processTransaction(txnHash: string){
         try{
-            console.log("processing transaction ",txnHash);
+            //console.log("processing transaction ",txnHash);
             const txn: Transaction = await this.txnService.getRawTransaction(txnHash, true);
             if(txn !== undefined){
                 for await (let voutItem of txn.vout){
