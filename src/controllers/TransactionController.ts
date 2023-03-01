@@ -23,13 +23,12 @@ export default class TransactionController extends Controller{
     }
 
     public static async verifyTransaction({req, res }: HttpRequestParams){
-        const {id,value,address} = req.body as Partial<TxnInput>;
+        const {id,value,address,tx_id} = req.body;
         const txnInputRepo = AppDataSource.getRepository(TxnInput);
-        const matched = await txnInputRepo.findOneBy({id});
+        const matched = await txnInputRepo.findOneBy({txId:tx_id});
         if(matched !== null){
             if(matched.address === address && matched.value == value && matched.received === false){
-                matched.received = true;
-                await txnInputRepo.save(matched);
+                await txnInputRepo.update({id: matched.id},{received: true});
                 return {
                     verified : true
                 }
