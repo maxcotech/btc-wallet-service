@@ -34,7 +34,7 @@ const jsonParser = bodyParser.json();
 
         const appService = new AppService();
         const messageService = new MessageService();
-        //appService.syncBlockchainData();
+        appService.syncBlockchainData();
         messageService.processMessageQueue();
     }
     catch(e){
