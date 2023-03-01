@@ -27,6 +27,10 @@ export default class AppService extends Service {
         this.txnService = new TransactionService();
         console.log("Blockchain Synchronizing Service Initialized.");
     }
+
+    public async getLatestBlock(){
+        return await this.blockService.getLatestBlockNumber()
+    }
     public async syncBlockchainData() {
         try {
             setTimeout(async () => {
@@ -36,7 +40,7 @@ export default class AppService extends Service {
                     await this.indexLatestBlock();
                     this.timer = 1000 * 60 * 10; // 10 minutes interval;
                 } else {
-                    const latestNum: number = await this.blockService.getLatestBlockNumber();
+                    const latestNum: number = await this.getLatestBlock();
                     if(latestNum !== undefined && latestNum !== null){
                         if(await this.isNewBlock(latestNum)){
                             if(await this.blocksAreMissing(latestNum)){
