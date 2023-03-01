@@ -10,7 +10,7 @@ export default class AccountRecord {
     @PrimaryGeneratedColumn()
     id: number;
     
-    @Column({type:"varchar",length:1000})
+    @Column({type:"varchar",length:255})
     userId: number;
 
     @Column({type:"double"})

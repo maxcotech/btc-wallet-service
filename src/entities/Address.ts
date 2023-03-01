@@ -6,7 +6,7 @@ export default class Address {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column({unique:true,length:1000, type: "varchar"})
+    @Column({unique:true,length:255, type: "varchar"})
     address: string;
 
     @Column({length:1000, type:"varchar"})
