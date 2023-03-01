@@ -7,7 +7,7 @@ class HomeController extends Controller {
         const appService = new AppService();
         res.send({
             hello: "Welcome to Btc Wallet",
-            info: {latestBlock: await appService.getLatestBlock(), consolidatedBlock: await appService.getHighestIndexInDb() },
+            info: {latestBlock: await appService.getLatestBlock(), consolidatedBlock: await appService.getHighestIndexInDb() ?? 0 },
             baseUrl: req.baseUrl,
         })
     }
