@@ -10,7 +10,7 @@ export default class AddressController extends Controller {
     public static async createAddress({req, res }: HttpRequestParams){
         const service = new AddressServices();
         const addressPayload = service.generateSegwitAddress();
-        return await this.saveAddress(addressPayload, req.body.userId);
+        return await AddressController.saveAddress(addressPayload, req.body.userId);
     }
 
     public static async saveAddress(addressPayload: any, userId = "0"){
