@@ -4,7 +4,7 @@ import Service from './Service';
 import { MESSAGE_RETRY_LIMIT, WALLET_DEFAULT_SYMBOL } from '../config/settings';
 import MessageQueue from '../entities/MessageQueue';
 import { MessageTypes } from '../config/enum';
-import { Not, Repository } from 'typeorm';
+import { In, Not, Repository } from 'typeorm';
 import AppDataSource from '../config/dataSource';
 import FailedQueueMessage from '../entities/FailedQueueMessage';
 
@@ -79,6 +79,33 @@ export default class MessageService extends Service{
                 this.processMessageQueue()
             }
         }, timeout)
+    }
+
+    async reQueueFailedMessages(){
+        try{
+            const items = await this.failedMessageRepo.find();
+            if(items.length > 0){
+                const messages: MessageQueue[] = [];
+                const failedIdsToDelete: number[] = [];
+                items.forEach((item) => {
+                    const newMessage = new MessageQueue();
+                    newMessage.message = item.message;
+                    newMessage.type = item.type;                                                                                                                                                                   
+                    newMessage.retries = 0;
+                    messages.push(newMessage);
+                    failedIdsToDelete.push(item.id);
+                })
+                await AppDataSource.transaction(async () => {
+                    await this.messageRepo.insert(messages);
+                    await this.failedMessageRepo.delete({id: In(failedIdsToDelete)})
+                })
+                return 'Successfully requeued all failed messages';
+            }
+            return "No failed messages to requeue";
+        }
+        catch(e){
+            return 'Failed to restore failed messages '+((e instanceof Error)? e.message: "");
+        }
     }
 
     async moveToFailedMessageRecord(message: MessageQueue){

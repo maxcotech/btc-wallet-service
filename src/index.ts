@@ -18,6 +18,8 @@ const jsonParser = bodyParser.json();
     try{
         await AppDataSource.initialize();
         console.log('App Data Store initialized.');
+        const appService = new AppService();
+        const messageService = new MessageService();
         app.post("/address",jsonParser, await requireAuthKey(AddressController.createAddress))
         app.get("/blocks/latest",await requireAuthKey(BlockController.getLatestBlock))
         app.get("/blocks/:blockNumber/hash",await requireAuthKey(BlockController.getBlockHash));
@@ -27,13 +29,12 @@ const jsonParser = bodyParser.json();
         app.post("/transaction",jsonParser,await requireAuthKey(TransactionController.createTransaction));
         app.post("/transaction/verify",jsonParser,await requireAuthKey(TransactionController.verifyTransaction));
         app.get("/ping",await requireAuthKey(Controller.ping));
+        app.get('/retry-failed', async (req,res) => res.json({message:await messageService.reQueueFailedMessages()}))
 
         app.listen(PORT,() => {
             console.log(`Bitcoin wallet service running on PORT ${PORT}`);
         })
 
-        const appService = new AppService();
-        const messageService = new MessageService();
         appService.syncBlockchainData();
         messageService.processMessageQueue();
     }
