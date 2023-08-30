@@ -17,38 +17,53 @@ import ValidationException from './../exceptions/ValidationException';
 import { transactionErrors } from '../config/errors/transaction.errors';
 
 
-export default class TransactionController extends Controller{
-    public static async getRawTransaction({req, res }: HttpRequestParams){
+export default class TransactionController extends Controller {
+    public static async getRawTransaction({ req, res }: HttpRequestParams) {
         await (new TransactionService()).getRawTransaction(req.params.tx_hash);
     }
 
-    public static async verifyTransaction({req, res }: HttpRequestParams){
-        const {id,value,address,tx_id} = req.body;
+    public static async getFeeEstimate({ req }: HttpRequestParams) {
+        const txnParams = await prepareTxnParams([{
+            address: req.query?.to,
+            value: req.query?.amount
+        } as TxnOutput]);
+        return {
+            feeUnits: txnParams.transactionFee,
+            fee: 0.00000001 * (txnParams.transactionFee ?? 0),
+            to: req.query?.to,
+            from: req.query?.from,
+            amount: req.query?.amount
+        }
+
+    }
+
+    public static async verifyTransaction({ req, res }: HttpRequestParams) {
+        const { id, value, address, tx_id } = req.body;
         const txnInputRepo = AppDataSource.getRepository(TxnInput);
-        const matched = await txnInputRepo.findOneBy({txId:tx_id});
-        if(matched !== null){
-            if(matched.address === address && matched.value == value && matched.received === false){
-                await txnInputRepo.update({id: matched.id},{received: true});
+        const matched = await txnInputRepo.findOneBy({ txId: tx_id });
+        if (matched !== null) {
+            if (matched.address === address && matched.value == value && matched.received === false) {
+                await txnInputRepo.update({ id: matched.id }, { received: true });
                 return {
-                    verified : true
+                    verified: true
                 }
             }
         }
         throw new ValidationException(transactionErrors.txnVerificationFailed);
     }
 
-    public static async createTransaction({req, res }: HttpRequestParams){
-        const {address,amount} = req.body;
+    public static async createTransaction({ req, res }: HttpRequestParams) {
+        const { address, amount } = req.body;
         console.log("submitted data...", req.body.address, req.body.amount)
-        const txnParams = await prepareTxnParams([{address,value: amount} as TxnOutput]);
-        const psbt = new Psbt({network: (new TransactionService()).network});
+        const txnParams = await prepareTxnParams([{ address, value: amount } as TxnOutput]);
+        const psbt = new Psbt({ network: (new TransactionService()).network });
         const addressRepo = AppDataSource.getRepository(Address);
         txnParams.inputs.forEach((input) => {
             psbt.addInput({
                 hash: input.txId,
                 index: input.vout,
                 witnessUtxo: {
-                    script: Buffer.from(input.scriptPubKey,"hex"),
+                    script: Buffer.from(input.scriptPubKey, "hex"),
                     value: input.value
                 }
             })
@@ -60,14 +75,14 @@ export default class TransactionController extends Controller{
             })
         })
         let index = 0;
-        for await (const input of txnParams.inputs){
-            const addressData = await addressRepo.findOne({where:{address:input.address}});
-            if(addressData !== null){
-                const wif = CryptoJS.AES.decrypt(addressData.wifCrypt,ENCRYPTION_SALT ?? "").toString(CryptoJS.enc.Utf8);
+        for await (const input of txnParams.inputs) {
+            const addressData = await addressRepo.findOne({ where: { address: input.address } });
+            if (addressData !== null) {
+                const wif = CryptoJS.AES.decrypt(addressData.wifCrypt, ENCRYPTION_SALT ?? "").toString(CryptoJS.enc.Utf8);
                 const ecpair = (new AddressServices()).getEcpair();
                 const wallet = ecpair.fromWIF(wif);
-                psbt.signInput(index,wallet);
-                psbt.validateSignaturesOfInput(index,validateInputSignatures);
+                psbt.signInput(index, wallet);
+                psbt.validateSignaturesOfInput(index, validateInputSignatures);
             }
             index++;
         }
@@ -79,13 +94,13 @@ export default class TransactionController extends Controller{
         //Test Acceptance 
         const acceptanceResult = await txnService.testMempoolAcceptance([txnHex]);
         let acceptable = false;
-        if(acceptanceResult !== undefined && acceptanceResult !== null && acceptanceResult[0]?.allowed === true){
+        if (acceptanceResult !== undefined && acceptanceResult !== null && acceptanceResult[0]?.allowed === true) {
             acceptable = true;
             await txnService.publishTransaction(txnHex);
-            console.log("transaction sent ",txnHex);
-            await recordSentTransaction(txnId,txnParams.inputs)
+            console.log("transaction sent ", txnHex);
+            await recordSentTransaction(txnId, txnParams.inputs)
         }
-        return {txnId,txnHex,address,amount, txnFee: txnParams.transactionFee, acceptable};
+        return { txnId, txnHex, address, amount, txnFee: txnParams.transactionFee, acceptable };
     }
-    
+
 }

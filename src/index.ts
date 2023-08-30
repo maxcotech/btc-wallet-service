@@ -15,30 +15,31 @@ const app = express();
 const jsonParser = bodyParser.json();
 
 (async () => {
-    try{
+    try {
         await AppDataSource.initialize();
         console.log('App Data Store initialized.');
         const appService = new AppService();
         const messageService = new MessageService();
-        app.post("/address",jsonParser, await requireAuthKey(AddressController.createAddress))
-        app.get("/blocks/latest",await requireAuthKey(BlockController.getLatestBlock))
-        app.get("/blocks/:blockNumber/hash",await requireAuthKey(BlockController.getBlockHash));
-        app.get("/block/:blockhash",await requireAuthKey(BlockController.getBlock));
-        app.get("/transactions/:tx_hash",await requireAuthKey(TransactionController.getRawTransaction));
+        app.post("/address", jsonParser, await requireAuthKey(AddressController.createAddress))
+        app.get("/blocks/latest", await requireAuthKey(BlockController.getLatestBlock))
+        app.get("/blocks/:blockNumber/hash", await requireAuthKey(BlockController.getBlockHash));
+        app.get("/block/:blockhash", await requireAuthKey(BlockController.getBlock));
+        app.get("/transactions/:tx_hash", await requireAuthKey(TransactionController.getRawTransaction));
         app.get("/", HomeController.index);
-        app.post("/transaction",jsonParser,await requireAuthKey(TransactionController.createTransaction));
-        app.post("/transaction/verify",jsonParser,await requireAuthKey(TransactionController.verifyTransaction));
-        app.get("/ping",await requireAuthKey(Controller.ping));
-        app.get('/retry-failed', async (req,res) => res.json({message:await messageService.reQueueFailedMessages()}))
+        app.get("/fee-estimate", await requireAuthKey(TransactionController.getFeeEstimate));
+        app.post("/transaction", jsonParser, await requireAuthKey(TransactionController.createTransaction));
+        app.post("/transaction/verify", jsonParser, await requireAuthKey(TransactionController.verifyTransaction));
+        app.get("/ping", await requireAuthKey(Controller.ping));
+        app.get('/retry-failed', async (req, res) => res.json({ message: await messageService.reQueueFailedMessages() }))
 
-        app.listen(PORT,() => {
+        app.listen(PORT, () => {
             console.log(`Bitcoin wallet service running on PORT ${PORT}`);
         })
 
         appService.syncBlockchainData();
         messageService.processMessageQueue();
     }
-    catch(e){
+    catch (e) {
         console.log("Failed to initialize App ", e)
     }
 
