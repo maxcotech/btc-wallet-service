@@ -1,4 +1,4 @@
-import { AxiosInstance } from "axios";
+import { AxiosError, AxiosInstance } from "axios";
 import AppDataSource from "../config/dataSource";
 import { TXN_CONFIRM_MIN, VAULT_ADDRESS } from "../config/settings";
 import Service from "./Service";
@@ -35,7 +35,11 @@ export default class ConfirmationService extends Service {
                }
           }
           catch (e) {
-               console.log(e);
+               if (e instanceof AxiosError) {
+                    console.log(e.response?.data ?? "Unknown error detected");
+               } else {
+                    console.log(e);
+               }
           }
 
      }
