@@ -25,13 +25,15 @@ export default class TransactionController extends Controller {
     public static async getFeeEstimate({ req }: HttpRequestParams) {
         const { to, amount } = req.query;
         const txnParams = await prepareTxnParams([{ address: to as any, value: amount as any } as TxnOutput]);
-        return {
+        const feeData = {
             feeUnits: txnParams.transactionFee,
             fee: 0.00000001 * (txnParams.transactionFee ?? 0),
             to: req.query?.to,
             from: req.query?.from,
             amount: req.query?.amount
         }
+        console.log(`fee data`, feeData);
+        return feeData;
 
     }
 
