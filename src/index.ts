@@ -10,6 +10,7 @@ import Controller from './controllers/Controller';
 import MessageService from "./services/MessageService";
 import { requireAuthKey } from "./helpers/auth_helpers";
 import { PORT } from "./config/settings";
+import ConfirmationService from "./services/ConfirmationService";
 
 const app = express();
 const jsonParser = bodyParser.json();
@@ -20,6 +21,7 @@ const jsonParser = bodyParser.json();
         console.log('App Data Store initialized.');
         const appService = new AppService();
         const messageService = new MessageService();
+        const confirmationService = new ConfirmationService();
         app.post("/address", jsonParser, await requireAuthKey(AddressController.createAddress))
         app.get("/blocks/latest", await requireAuthKey(BlockController.getLatestBlock))
         app.get("/blocks/:blockNumber/hash", await requireAuthKey(BlockController.getBlockHash));
@@ -38,6 +40,7 @@ const jsonParser = bodyParser.json();
 
         appService.syncBlockchainData();
         messageService.processMessageQueue();
+        confirmationService.processUnconfirmedTransactions();
     }
     catch (e) {
         console.log("Failed to initialize App ", e)
