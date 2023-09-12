@@ -29,6 +29,7 @@ const jsonParser = bodyParser.json();
         app.get("/transactions/:tx_hash", await requireAuthKey(TransactionController.getRawTransaction));
         app.get("/", HomeController.index);
         app.get("/fee-estimate", await requireAuthKey(TransactionController.getFeeEstimate));
+        app.get('/wallet-balance', await requireAuthKey(HomeController.walletBalance));
         app.post("/transaction", jsonParser, await requireAuthKey(TransactionController.createTransaction));
         app.post("/transaction/verify", jsonParser, await requireAuthKey(TransactionController.verifyTransaction));
         app.get("/ping", await requireAuthKey(Controller.ping));
