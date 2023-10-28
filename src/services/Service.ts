@@ -14,16 +14,16 @@ class Service {
 
 
     constructor() {
-        this.network = bitcoin.networks.testnet;
+        this.network = bitcoin.networks.bitcoin;
         this.baseUrl = NODE_BASE_URL;
         this.feeDensityUrl = "https://api.blockcypher.com/v1/btc/main";
         this.client = this.getClient();
     }
 
     getAppClient() {
-        const client = axios.create({baseURL: APP_API_URL});
+        const client = axios.create({ baseURL: APP_API_URL });
         client.interceptors.request.use(async (configs) => {
-            if(configs !== undefined && configs.headers !== undefined){
+            if (configs !== undefined && configs.headers !== undefined) {
                 configs.headers.accept = "application/json";
                 configs.headers[AUTH_HEADER_KEY] = await getClientSecret() ?? "";
             }

@@ -27,7 +27,7 @@ export default class TransactionService extends Service {
     }
 
     async getTransactionDetails(txId: string) {
-        const baseUrl = (this.network === bitcoin.networks.testnet) ? "https://blockstream.info/testnet/api/tx/" : "https://blockstream.info/api/tx/";
+        const baseUrl = (this.network === bitcoin.networks.bitcoin) ? "https://blockstream.info/api/tx/" : "https://blockstream.info/testnet/api/tx/";
         const result = await axios.get(baseUrl + txId);
         if (result.status === 200) {
             return result.data;
