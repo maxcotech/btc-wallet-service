@@ -45,6 +45,7 @@ class Service {
         const client = axios.create({ baseURL: this.baseUrl });
         client.interceptors.request.use((configs) => {
             if (configs !== undefined && configs.headers !== undefined) {
+                configs.timeout = 25000
                 configs.headers.accept = "application/json";
                 configs.headers['x-api-key'] = GB_API_KEY ?? "";
                 configs.headers['Content-Type'] = "text/plain";
